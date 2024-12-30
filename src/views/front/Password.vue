@@ -1,0 +1,118 @@
+<template>
+  <el-card style="width: 500px; margin: 100px auto">
+    <el-form label-width="120px" size="small" :model="form" :rules="rules" ref="pass">
+
+      <el-form-item label="原 password" prop="password">
+        <el-input v-model="form.password" autocomplete="off" show-password></el-input>
+      </el-form-item>
+
+      <el-form-item label="新 password" prop="newPassword">
+        <el-input v-model="form.newPassword" autocomplete="off" show-password></el-input>
+      </el-form-item>
+
+      <el-form-item label="确认新 password" prop="confirmPassword">
+        <el-input v-model="form.confirmPassword" autocomplete="off" show-password></el-input>
+      </el-form-item>
+
+      <el-form-item>
+        <el-button type="primary" @click="save">确 定</el-button>
+      </el-form-item>
+    </el-form>
+  </el-card>
+</template>
+
+<script>
+export default {
+  name: "Password",
+  data() {
+    return {
+      form: {},
+      user: localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")) : {},
+      rules: {
+        password: [
+          { required: true, message: 'please enter原 password', trigger: 'blur' },
+          { min: 3, message: '长度不少于3位', trigger: 'blur' }
+        ],
+        newPassword: [
+          { required: true, message: 'please enter新 password', trigger: 'blur' },
+          { min: 3, message: '长度不少于3位', trigger: 'blur' }
+        ],
+        confirmPassword: [
+          { required: true, message: 'please enter password', trigger: 'blur' },
+          { min: 3, message: '长度不少于3位', trigger: 'blur' }
+        ],
+      }
+    }
+  },
+  created() {
+    // 如果未登录，引导用户登录
+    if (!this.user.username) {
+      this.$message.warning("You need to log in first.");
+      this.$router.push('/login'); // 跳转到登录页
+    } else {
+      this.form.username = this.user.username;
+    }
+  },
+  methods: {
+    save() {
+      // 如果用户未登录，提示并退出
+      if (!this.user.username) {
+        this.$message.warning("You need to log in first.");
+        this.$router.push('/login');
+        return;
+      }
+
+      // 表单验证
+      this.$refs.pass.validate((valid) => {
+        if (valid) {
+          // 检查新密码和确认密码是否一致
+          if (this.form.newPassword !== this.form.confirmPassword) {
+            this.$message.error("2次输入的新 password不相同");
+            return false;
+          }
+
+          // 调用修改密码接口
+          this.request.post("/user/password", this.form).then(res => {
+            if (res.code === '200') {
+              this.$message.success("修改成功");
+              this.$store.commit("logout");  // 注销
+            } else {
+              this.$message.error(res.msg);
+            }
+          });
+        }
+      });
+    },
+  }
+}
+</script>
+
+<style scoped>
+.avatar-uploader {
+  text-align: center;
+  padding-bottom: 10px;
+}
+.avatar-uploader .el-upload {
+  border: 1px dashed #d9d9d9;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.avatar-uploader .el-upload:hover {
+  border-color: #409EFF;
+}
+.avatar-uploader-icon {
+  font-size: 28px;
+  color: #8c939d;
+  width: 138px;
+  height: 138px;
+  line-height: 138px;
+  text-align: center;
+}
+.avatar {
+  width: 138px;
+  height: 138px;
+  display: block;
+}
+</style>
